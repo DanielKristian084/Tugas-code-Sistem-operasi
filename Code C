@@ -1,0 +1,125 @@
+#include <stdio.h>
+#include <pthread.h>
+
+// Shared Resource
+int counter = 0;
+
+// Mutex untuk sinkronisasi
+pthread_mutex_t mutex;
+
+// Fungsi untuk mengubah counter
+void tambahCounter(const char *namaThread) {
+
+    // Mengunci mutex
+    pthread_mutex_lock(&mutex);
+
+    counter++;
+
+    printf("%s mengubah counter menjadi: %d\n",
+           namaThread, counter);
+
+    // Membuka mutex
+    pthread_mutex_unlock(&mutex);
+}
+
+// Thread 1: Faktorial
+void *faktorial(void *arg) {
+
+    int n = 5;
+    int hasil = 1;
+
+    for (int i = 1; i <= n; i++) {
+        hasil *= i;
+    }
+
+    printf("Thread Faktorial : %d! = %d\n",
+           n, hasil);
+
+    tambahCounter("Thread Faktorial");
+
+    return NULL;
+}
+
+// Thread 2: Fibonacci
+void *fibonacci(void *arg) {
+
+    int n = 10;
+    int a = 0;
+    int b = 1;
+
+    printf("Thread Fibonacci : ");
+
+    for (int i = 0; i < n; i++) {
+
+        printf("%d ", a);
+
+        int c = a + b;
+        a = b;
+        b = c;
+    }
+
+    printf("\n");
+
+    tambahCounter("Thread Fibonacci");
+
+    return NULL;
+}
+
+// Thread 3: Membaca file
+void *dataText(void *arg) {
+
+    FILE *file;
+    char data[100];
+
+    printf("Thread Data Text :\n");
+
+    file = fopen("data.txt", "r");
+
+    if (file == NULL) {
+
+        printf("File data.txt tidak ditemukan!\n");
+
+        tambahCounter("Thread Data Text");
+
+        return NULL;
+    }
+
+    while (fgets(data, sizeof(data), file) != NULL) {
+        printf("%s", data);
+    }
+
+    fclose(file);
+
+    tambahCounter("Thread Data Text");
+
+    return NULL;
+}
+
+int main() {
+
+    pthread_t thread1;
+    pthread_t thread2;
+    pthread_t thread3;
+
+    // Inisialisasi mutex
+    pthread_mutex_init(&mutex, NULL);
+
+    // Membuat 3 thread
+    pthread_create(&thread1, NULL, faktorial, NULL);
+    pthread_create(&thread2, NULL, fibonacci, NULL);
+    pthread_create(&thread3, NULL, dataText, NULL);
+
+    // Menunggu semua thread selesai
+    pthread_join(thread1, NULL);
+    pthread_join(thread2, NULL);
+    pthread_join(thread3, NULL);
+
+    printf("\nSemua thread selesai.\n");
+
+    printf("Nilai counter akhir: %d\n", counter);
+
+    // Menghapus mutex
+    pthread_mutex_destroy(&mutex);
+
+    return 0;
+}
